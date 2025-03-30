@@ -1,0 +1,52 @@
+name: Data Scraper
+
+on:
+  # 代码提交时触发
+  push:
+    paths:
+      - 'main.py'
+      - 'requirements.txt'
+  # 定时任务（每天凌晨3点执行）
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  scrape-data:
+    runs-on: ubuntu-latest
+    steps:
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: supzhang/your-repo-name  # 替换为实际仓库名称
+          ref: main  # 替换为实际分支
+
+      # 安装 Python 依赖
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 执行普通数据抓取
+      - name: Run main scraper
+        run: |
+          python main.py
+        env:
+          # 数据库配置等敏感信息通过 Secrets 注入
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+      # 执行全渠道数据抓取
+      - name: Run channel scraper
+        run: |
+          python main.py -channel
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
