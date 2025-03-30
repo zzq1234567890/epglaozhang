@@ -2,37 +2,43 @@ name: epglaozhang
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # 每天午夜执行（可调整为其他时间）
+    - cron: "0 0 * * *"  # 每天午夜执行（可调整）
   workflow_dispatch:     # 允许手动触发
 
 jobs:
-  scrape-data:
+  scraping-job:
     runs-on: ubuntu-latest
     steps:
-      # 1. 检出代码仓库
+      # 1. 检出代码
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. 创建 Python 环境
+      # 2. 设置 Python 环境（3.10 版本）
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"  # 根据需要选择Python版本
-      # 3. 执行默认抓取任务
+          python-version: "3.10"
+
+      # 3. 安装依赖库（包括 requests、Django、BeautifulSoup4）
+      - name: Install dependencies
+        run: |
+          pip install requests django beautifulsoup4
+          # 如果有其他依赖项，可添加到 requirements.txt 并使用 pip install -r requirements.txt
+
+      # 4. 执行默认抓取任务（使用 SQLite3 数据库）
       - name: Scrape default data
         run: python main.py
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}  # 从GitHub Secrets获取数据库连接信息
-          API_KEY: ${{ secrets.API_KEY }}            # 如果需要其他API密钥
+          # Django 的数据库配置（使用 SQLite3 默认路径）
+          DJANGO_SETTINGS_MODULE: your_project.settings  # 替换为你的 Django 项目 settings 模块路径
 
-      # 5. 执行带-channel参数的抓取（抓取所有来源）
+      # 5. 执行全频道抓取任务
       - name: Scrape all channels
         run: python main.py -channel
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          API_KEY: ${{ secrets.API_KEY }}
+          DJANGO_SETTINGS_MODULE: your_project.settings
 
-      # 可选：添加错误处理（根据需要）
+      # 可选：添加错误处理
       - name: Check exit status
         if: ${{ failure() }}
         run: echo "任务执行失败，请检查日志"
