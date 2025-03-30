@@ -1,48 +1,45 @@
-name: epg laozhang
+name: epglaozhang
 
 on:
-  
-  # 定时任务（每天凌晨3点执行）
   schedule:
-    - cron: '0 3 * * *'
+    - cron: "0 0 * * *"  # 每天午夜执行（可调整为其他时间）
+  workflow_dispatch:     # 允许手动触发
 
 jobs:
   scrape-data:
     runs-on: ubuntu-latest
     steps:
-      # 检出代码
+      # 1. 检出代码仓库
       - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          repository: supzhang/your-repo-name  # 替换为实际仓库名称
-          ref: main  # 替换为实际分支
+        uses: actions/checkout@v3
 
-      # 安装 Python 依赖
+      # 2. 创建 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"  # 根据需要选择Python版本
 
+      # 3. 安装依赖（如果需要）
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt  # 如果有依赖文件
+          # 如果没有依赖项可以删除此步骤
 
-      # 执行普通数据抓取
-      - name: Run main scraper
-        run: |
-          python main.py
+      # 4. 执行默认抓取任务
+      - name: Scrape default data
+        run: python main.py
         env:
-          # 数据库配置等敏感信息通过 Secrets 注入
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}  # 从GitHub Secrets获取数据库连接信息
+          API_KEY: ${{ secrets.API_KEY }}            # 如果需要其他API密钥
 
-      # 执行全渠道数据抓取
-      - name: Run channel scraper
-        run: |
-          python main.py -channel
+      # 5. 执行带-channel参数的抓取（抓取所有来源）
+      - name: Scrape all channels
+        run: python main.py -channel
         env:
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+
+      # 可选：添加错误处理（根据需要）
+      - name: Check exit status
+        if: ${{ failure() }}
+        run: echo "任务执行失败，请检查日志"
